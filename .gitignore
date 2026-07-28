@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.DS_Store
+
+# Fichier d'icône de dossier créé par le Finder
+Icon?
+
+*.local
+.vite/
+
+# Originaux 320 kbps des compositions : conservés en local, hors du dépôt.
+audio-source/
