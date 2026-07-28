@@ -5,7 +5,6 @@ import { buildRoute, pointAtLength, kmToMapUnits } from '../../lib/route.js';
 import { baseScale, clamp, damp, lerp } from '../../lib/camera.js';
 import { createWeather, blendWeather } from '../../lib/weather.js';
 import { journeyState, useOdysseusStore } from '../../store/useOdysseusStore.js';
-import { ancientPlaces } from '../../data/ancientPlaces.js';
 
 const INK = '#060d16';
 const SEA_DEEP = '#0c1b2a';
@@ -42,15 +41,6 @@ export default function Chart({ onStopClick }) {
     [steps]
   );
 
-  // Les royaumes priment sur les repères : en cas de chevauchement, c'est le
-  // palais d'un roi que l'on garde, pas un cap.
-  const places = useMemo(
-    () =>
-      ancientPlaces
-        .map((p) => ({ ...p, at: project(p.lng, p.lat) }))
-        .sort((a, b) => (a.kind === b.kind ? 0 : a.kind === 'royaume' ? -1 : 1)),
-    []
-  );
 
   // Cadrage d'ensemble : toute la route, avec de la marge.
   const basin = useMemo(() => {
@@ -365,107 +355,6 @@ export default function Chart({ onStopClick }) {
           if (r.maxY < view.minY || r.minY > view.maxY) continue;
           ctx.stroke(r.path);
         }
-      }
-
-      // --- Les lieux du récit ---------------------------------------------
-      // Des citadelles dessinées plutôt que des noms écrits : une typographie
-      // moderne posée sur une carte gravée trahit tout de suite l'illusion,
-      // là où un petit rempart la sert. Le nom ne vient qu'au survol.
-      const placeFade = clamp((cam.z - 2.1) / 1.4, 0, 1) * (1 - epilogueFade);
-      if (placeFade > 0.01 && width >= 900) {
-        ctx.save();
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        ctx.lineJoin = 'miter';
-
-        const placed = [];
-        let hovered = null;
-        let hoveredDist = 34;
-
-        for (const place of places) {
-          const q = toScreen(place.at);
-          if (q.x < -60 || q.x > width + 60 || q.y < -40 || q.y > height + 40) continue;
-
-          // On s'efface près d'une escale : c'est elle que l'on vient lire.
-          let crowded = false;
-          for (const sp of stopPoints) {
-            const s2 = toScreen(sp);
-            if (Math.hypot(s2.x - q.x, s2.y - q.y) < 46) { crowded = true; break; }
-          }
-          if (crowded) continue;
-
-          const royal = place.kind === 'royaume';
-          const w = royal ? 23 : 10;
-          const box = { x0: q.x - w / 2, x1: q.x + w / 2, y0: q.y - 16, y1: q.y + 3 };
-          if (placed.some((b) => box.x0 < b.x1 && box.x1 > b.x0 && box.y0 < b.y1 && box.y1 > b.y0)) {
-            continue;
-          }
-          placed.push(box);
-
-          const d = Math.hypot(q.x - pointerPx, q.y - pointerPy);
-          if (d < hoveredDist) {
-            hoveredDist = d;
-            hovered = { place, q };
-          }
-
-          const a = placeFade * (royal ? 0.85 : 0.6);
-          ctx.strokeStyle = `rgba(216, 200, 165, ${a})`;
-          ctx.fillStyle = `rgba(216, 200, 165, ${a * 0.42})`;
-          ctx.lineWidth = 1;
-
-          if (royal) {
-            // Une citadelle : trois tours de hauteurs inégales sur un rempart.
-            // C'est le signe des villes sur les cartes anciennes, et il se
-            // reconnaît encore à quinze pixels.
-            const x = Math.round(q.x) + 0.5;
-            const y = Math.round(q.y) + 0.5;
-            const towers = [
-              [-10, 8],
-              [-3.5, 14],
-              [4.5, 10],
-            ];
-            for (const [dx, h] of towers) {
-              const tw = dx === -3.5 ? 7 : 5.5;
-              ctx.beginPath();
-              ctx.rect(x + dx, y - h, tw, h);
-              ctx.fill();
-              ctx.stroke();
-            }
-            ctx.beginPath();
-            ctx.moveTo(x - 11.5, y);
-            ctx.lineTo(x + 11.5, y);
-            ctx.stroke();
-          } else {
-            // Un repère : simple cairn, sans architecture — un cap ou une
-            // contrée n'est pas une ville.
-            const x = Math.round(q.x) + 0.5;
-            const y = Math.round(q.y) + 0.5;
-            ctx.beginPath();
-            ctx.moveTo(x, y - 7);
-            ctx.lineTo(x + 4.5, y);
-            ctx.lineTo(x - 4.5, y);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-          }
-        }
-
-        // Le nom, seulement sous le curseur.
-        if (hovered) {
-          const { place, q } = hovered;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'top';
-          ctx.font = '500 9.5px Inter, system-ui, sans-serif';
-          if ('letterSpacing' in ctx) ctx.letterSpacing = '0.18em';
-          ctx.fillStyle = `rgba(246, 243, 236, ${placeFade})`;
-          ctx.fillText(place.name.toUpperCase(), q.x, q.y + 7);
-          if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
-          ctx.font = 'italic 10px Georgia, serif';
-          ctx.fillStyle = `rgba(216, 200, 165, ${placeFade * 0.7})`;
-          ctx.fillText(place.note, q.x, q.y + 20);
-        }
-
-        ctx.restore();
-        ctx.setTransform(dpr * s, 0, 0, dpr * s, dpr * originX, dpr * originY);
       }
 
       // --- Zones d'incertitude (mode historiens) -------------------------
