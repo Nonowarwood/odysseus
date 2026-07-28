@@ -15,7 +15,7 @@ import { useJourneyScroll, scrollToVh } from './hooks/useJourneyScroll';
 import { useOdysseusStore } from './store/useOdysseusStore';
 import { startAmbience, stopAmbience, setScore, setChapterTrack } from './lib/ambience';
 import { trackFor } from './data/soundtrack';
-import { documentVh, stopOffsetVh } from './lib/scroll';
+
 
 // Secondes de lecture accordées à chaque hauteur d'écran en mode cinéma.
 const CINEMA_SECONDS_PER_VH = 15;
@@ -34,7 +34,8 @@ export default function App() {
   const startJourney = useOdysseusStore((s) => s.startJourney);
 
   const readingVeil = phase === 'journey' && !sailing;
-  const totalVh = documentVh(steps.length);
+  const { layout } = nav;
+  const totalVh = layout.totalVh;
 
   // --- Verrou du scroll tant que l'ouverture n'est pas franchie -----------
   useEffect(() => {
@@ -51,16 +52,19 @@ export default function App() {
     };
   }, [hasStarted, nav]);
 
+  // On n'ouvre le contexte audio qu'une fois l'ouverture franchie : c'est le
+  // clic sur « Commencer le voyage » qui donne au navigateur l'autorisation de
+  // jouer du son. L'ouvrir avant le laisserait suspendu et muet.
   useEffect(() => {
-    if (soundOn) startAmbience();
+    if (soundOn && hasStarted) startAmbience();
     else stopAmbience();
     return () => stopAmbience();
-  }, [soundOn]);
+  }, [soundOn, hasStarted]);
 
   // La partition suit le chapitre : la météo du récit pilote directement les
   // couches sonores, si bien que l'orage s'entend avant même de se voir.
   useEffect(() => {
-    if (!soundOn) return;
+    if (!soundOn || !hasStarted) return;
     const w = steps[index].weather ?? {};
     setScore({
       storm: Math.max(w.rain ?? 0, (w.lightning ?? 0) * 0.9),
@@ -68,14 +72,14 @@ export default function App() {
       wonder: Math.max(w.motes ?? 0, (w.mist ?? 0) * 0.6),
     });
     setChapterTrack(trackFor(phase, steps[index].id));
-  }, [index, phase, soundOn, steps]);
+  }, [index, phase, soundOn, hasStarted, steps]);
 
   const goToStop = useCallback(
     (i) => {
       setCinema(false);
-      scrollToVh(nav, stopOffsetVh(Math.min(Math.max(i, 0), steps.length - 1)), 2.8);
+      scrollToVh(nav, layout.stopOffsetVh(Math.min(Math.max(i, 0), steps.length - 1)));
     },
-    [nav, setCinema, steps.length]
+    [layout, nav, setCinema, steps.length]
   );
 
   const begin = useCallback(() => {
@@ -150,12 +154,12 @@ export default function App() {
         goToStop(0);
       } else if (e.key === 'End') {
         e.preventDefault();
-        scrollToVh(nav, totalVh - 1, 3.4);
+        scrollToVh(nav, layout.epilogueVh);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [begin, goToStop, nav, totalVh]);
+  }, [begin, goToStop, layout, nav]);
 
   return (
     <>
@@ -194,7 +198,6 @@ export default function App() {
       <ProgressRail />
       <Chrome
         onToggleCinema={() => setCinema(!cinema)}
-        onRestart={() => goToStop(0)}
         onPrev={() => goToStop(index - 1)}
         onNext={() => goToStop(index + 1)}
       />

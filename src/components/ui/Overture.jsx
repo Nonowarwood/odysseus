@@ -17,6 +17,7 @@ const rise = {
  */
 export default function Overture({ onBegin }) {
   const hasStarted = useOdysseusStore((s) => s.hasStarted);
+  const stops = useOdysseusStore((s) => s.steps.length);
 
   return (
     <AnimatePresence>
@@ -101,7 +102,7 @@ export default function Overture({ onBegin }) {
             custom={2}
             className="absolute bottom-9 text-[9px] uppercase tracking-[0.32em] text-papyrus/50"
           >
-            14 escales · 10 ans · 1 seul survivant
+            {stops} escales · 10 ans · 1 seul survivant
           </motion.p>
         </motion.header>
       )}

@@ -37,7 +37,7 @@ function IconButton({ active, disabled, onClick, label, children }) {
   );
 }
 
-export default function Chrome({ onToggleCinema, onRestart, onPrev, onNext }) {
+export default function Chrome({ onToggleCinema, onPrev, onNext }) {
   const steps = useOdysseusStore((s) => s.steps);
   const index = useOdysseusStore((s) => s.index);
   const phase = useOdysseusStore((s) => s.phase);
@@ -59,20 +59,6 @@ export default function Chrome({ onToggleCinema, onRestart, onPrev, onNext }) {
 
   return (
     <>
-      {/* Marque */}
-      <motion.button
-        onClick={onRestart}
-        {...appear()}
-        className="fixed left-6 top-6 z-40 text-left md:left-10 md:top-8"
-      >
-        <span className="block font-title text-2xl leading-none text-ivory transition-colors duration-500 hover:text-gold">
-          Odysseus
-        </span>
-        <span className="mt-1 block text-[8px] font-medium uppercase tracking-[0.38em] text-gold/80">
-          Le Retour
-        </span>
-      </motion.button>
-
       {/* Commandes */}
       <motion.div
         {...appear(0.05)}

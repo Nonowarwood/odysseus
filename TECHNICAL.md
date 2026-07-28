@@ -49,10 +49,26 @@ escales sont voisines : on ne prend pas de recul pour quatre kilomètres.
 node scripts/build-map.mjs
 ```
 
-Le script découpe les côtes sur la fenêtre −8→39 °E / 28,5→48,5 °N
-(Sutherland–Hodgman), projette en Mercator, simplifie chaque anneau
-(Douglas–Peucker adapté aux contours fermés) et écrit ~250 chemins SVG, soit
-117 ko — servis en JS, sans requête réseau supplémentaire.
+Le script découpe quatre jeux de données sur la fenêtre −8→39 °E / 28,5→48,5 °N
+(Sutherland–Hodgman pour les polygones, découpe en tronçons pour les lignes),
+projette en Mercator et simplifie (Douglas–Peucker, adapté aux contours fermés) :
+
+| couche | contenu | rôle |
+| :--- | :--- | :--- |
+| côtes | 263 anneaux | le trait de rivage, assez fin pour supporter le zoom |
+| bathymétrie | 5 nappes, −200 à −4 000 m | le relief de la mer |
+| fleuves | 104 tronçons | la structure des terres |
+| lacs | 36 anneaux | — |
+
+Les nappes de bathymétrie sont emboîtées : chacune couvre ce qui est plus
+profond qu'un palier. Empilées en fondu sombre, elles creusent le bassin — le
+plateau continental reste clair, les fosses ioniennes s'enfoncent — et leur
+liseré tient lieu de courbe de niveau. Aucune image raster n'est nécessaire.
+
+Fleuves et lacs n'apparaissent qu'au-delà d'un certain zoom : en vue d'ensemble
+ils ne seraient qu'un fourmillement de traits.
+
+Total : 365 ko de JS, servis dans le bundle, sans requête supplémentaire.
 
 La même projection est réexportée sous `project(lng, lat)` : la carte et les
 coordonnées du récit vivent forcément dans le même espace.
@@ -148,10 +164,20 @@ d'1,5 px à l'écran. Mesuré à 60 fps constants en vue d'ensemble comme en zoo
 `src/lib/scroll.js` traduit une position de scroll en état narratif :
 
 ```
-1 vh          ouverture (verrouillée jusqu'au clic)
-15 × 1 vh     un bloc par escale — 68 % à quai, 32 % en traversée
-2 vh          épilogue
+1 vh                  ouverture (verrouillée jusqu'au clic)
+0,7 vh + traversée    un bloc par escale
+2 vh                  épilogue
 ```
+
+**Les blocs n'ont pas la même hauteur.** La part « à quai » est fixe — le temps
+de lire est le même partout — mais la traversée s'étire avec la distance
+réellement parcourue, en racine carrée pour que les sauts courts ne
+disparaissent pas face aux 2 495 km de la remontée vers Corcyre. La durée des
+déplacements programmés en découle : 3 s pour les 4 km d'Ithaque au palais,
+10 s pour la traversée du Couchant.
+
+Toute la géométrie vit dans `buildLayout(steps)`, qui produit des offsets
+cumulés ; plus rien ne peut se calculer par simple multiplication.
 
 Trois garde-fous rendent le défilement prévisible :
 
@@ -191,8 +217,10 @@ src/
   déclencherait un rendu React par frame et ferait tomber l'animation.
 - Les tracés `via` de `journeySteps.js` ne sont pas décoratifs : ils empêchent
   la spline de couper à travers les terres.
-- L'ambiance sonore ne démarre que sur clic explicite (politique d'autoplay des
-  navigateurs, et respect de l'utilisateur).
+- Le son est actif d'origine, mais le contexte audio n'est ouvert qu'une fois
+  l'ouverture franchie : le clic sur « Commencer le voyage » est le seul moment
+  où le navigateur autorise la lecture. L'ouvrir avant le laisserait suspendu
+  et muet. L'interrupteur reste disponible à tout moment.
 - `prefers-reduced-motion` désactive le scroll inertiel et les transitions.
 - Aucune musique existante n'est utilisée ni imitée : la bande-son par défaut
   est générée à l'exécution. Toute piste ajoutée dans `public/audio/` engage

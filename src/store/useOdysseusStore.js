@@ -29,7 +29,9 @@ export const useOdysseusStore = create((set, get) => ({
   phase: 'hero',
 
   mapMode: 'homer', // 'homer' | 'historians'
-  soundOn: false,
+  // Allumé d'origine : le son démarre au clic d'entrée, seul moment où le
+  // navigateur autorise la lecture audio.
+  soundOn: true,
   cinema: false,
   detail: 'summary', // 'summary' | 'full' | 'quote'
 

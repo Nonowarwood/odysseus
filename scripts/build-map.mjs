@@ -1,3 +1,19 @@
+/**
+ * Fabrique la géographie de la carte à partir des données Natural Earth 10 m.
+ *
+ * Sortie : src/data/mediterranean.js — côtes, bathymétrie, fleuves et lacs,
+ * déjà découpés sur la fenêtre du récit, projetés en Mercator et simplifiés.
+ * Rien n'est chargé à l'exécution : tout est servi dans le bundle.
+ *
+ * Sources attendues dans le dossier courant (github.com/martynafford/natural-earth-geojson) :
+ *   ne_10m_land.json                    ne_10m_minor_islands.json
+ *   ne_10m_bathymetry_K_200.json        ne_10m_bathymetry_J_1000.json
+ *   ne_10m_bathymetry_I_2000.json       ne_10m_bathymetry_H_3000.json
+ *   ne_10m_bathymetry_G_4000.json       ne_10m_rivers_lake_centerlines.json
+ *   ne_10m_lakes.json
+ *
+ * Usage : node scripts/build-map.mjs [destination]
+ */
 import fs from 'node:fs';
 
 // --- Fenêtre géographique : Gibraltar → mer Noire, Alpes → Sahara ---
@@ -17,7 +33,7 @@ function project([lng, lat]) {
   return [(lng - LNG_MIN) * K, (Y_TOP - mercY(lat)) * K];
 }
 
-// --- Sutherland–Hodgman contre un rectangle ---
+// --- Sutherland–Hodgman contre un rectangle (polygones) ---
 function clipRect(ring) {
   const edges = [
     { inside: (p) => p[0] >= CLIP.xMin, inter: (a, b) => interX(a, b, CLIP.xMin) },
@@ -52,6 +68,24 @@ function interX(a, b, x) {
 function interY(a, b, y) {
   const t = (y - a[1]) / (b[1] - a[1]);
   return [a[0] + t * (b[0] - a[0]), y];
+}
+
+const inBox = (p) =>
+  p[0] >= CLIP.xMin && p[0] <= CLIP.xMax && p[1] >= CLIP.yMin && p[1] <= CLIP.yMax;
+
+/** Découpe une polyligne en tronçons contenus dans la fenêtre. */
+function clipLine(points) {
+  const runs = [];
+  let run = [];
+  for (const p of points) {
+    if (inBox(p)) run.push(p);
+    else if (run.length) {
+      runs.push(run);
+      run = [];
+    }
+  }
+  if (run.length) runs.push(run);
+  return runs.filter((r) => r.length >= 2);
 }
 
 // --- Douglas–Peucker (en espace projeté, tolérance en unités de viewBox) ---
@@ -102,56 +136,120 @@ function ringArea(pts) {
   return Math.abs(a / 2);
 }
 
-function toPath(pts) {
-  const r = (n) => Math.round(n * 10) / 10;
-  let d = `M${r(pts[0][0])} ${r(pts[0][1])}`;
-  for (let i = 1; i < pts.length; i++) d += `L${r(pts[i][0])} ${r(pts[i][1])}`;
-  return d + 'Z';
+const r1 = (n) => Math.round(n * 10) / 10;
+
+function toPath(pts, close) {
+  let d = `M${r1(pts[0][0])} ${r1(pts[0][1])}`;
+  for (let i = 1; i < pts.length; i++) d += `L${r1(pts[i][0])} ${r1(pts[i][1])}`;
+  return close ? d + 'Z' : d;
 }
 
-function collectRings(geometry) {
+function read(file) {
+  if (!fs.existsSync(file)) {
+    console.warn(`  (absent, ignoré) ${file}`);
+    return null;
+  }
+  return JSON.parse(fs.readFileSync(file, 'utf8'));
+}
+
+function collectRings(g) {
   const rings = [];
-  const g = geometry;
+  if (!g) return rings; // certains enregistrements Natural Earth ont une géométrie nulle
   if (g.type === 'Polygon') rings.push(...g.coordinates);
   else if (g.type === 'MultiPolygon') for (const poly of g.coordinates) rings.push(...poly);
   return rings;
 }
 
-function processFile(file, { eps, minArea }) {
-  const fc = JSON.parse(fs.readFileSync(file, 'utf8'));
-  const paths = [];
+function collectLines(g) {
+  if (!g) return [];
+  if (g.type === 'LineString') return [g.coordinates];
+  if (g.type === 'MultiLineString') return g.coordinates;
+  return [];
+}
+
+/** Polygones : découpe, projection, simplification, filtre de surface. */
+function polygons(file, { eps, minArea }) {
+  const fc = read(file);
+  if (!fc) return [];
+  const out = [];
   for (const f of fc.features) {
     for (const ring of collectRings(f.geometry)) {
-      // rejet rapide
-      let inBox = false;
-      for (const [lng, lat] of ring) {
-        if (lng >= CLIP.xMin && lng <= CLIP.xMax && lat >= CLIP.yMin && lat <= CLIP.yMax) { inBox = true; break; }
-      }
-      if (!inBox) continue;
-
+      if (!ring.some(inBox)) continue;
       const clipped = clipRect(ring);
       if (clipped.length < 3) continue;
-
-      const projected = clipped.map(project);
-      const simplified = simplifyRing(projected, eps);
+      const simplified = simplifyRing(clipped.map(project), eps);
       if (simplified.length < 3) continue;
       const area = ringArea(simplified);
       if (area < minArea) continue;
-      paths.push({ d: toPath(simplified), area });
+      out.push({ d: toPath(simplified, true), area });
     }
   }
-  return paths;
+  return out.sort((a, b) => b.area - a.area);
 }
 
-const land = processFile("ne10m_land.json", { eps: 0.35, minArea: 0.9 });
-const minor = processFile("ne10m_minor.json", { eps: 0.25, minArea: 0.12 });
+/** Polylignes : mêmes étapes, sans fermeture ni filtre de surface. */
+function polylines(file, { eps, minLength, keep }) {
+  const fc = read(file);
+  if (!fc) return [];
+  const out = [];
+  for (const f of fc.features) {
+    if (keep && !keep(f.properties ?? {})) continue;
+    for (const line of collectLines(f.geometry)) {
+      for (const run of clipLine(line)) {
+        const pts = rdp(run.map(project), eps);
+        if (pts.length < 2) continue;
+        let len = 0;
+        for (let i = 1; i < pts.length; i++) {
+          len += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+        }
+        if (len < minLength) continue;
+        out.push(toPath(pts, false));
+      }
+    }
+  }
+  return out;
+}
 
-const all = [...land, ...minor].sort((a, b) => b.area - a.area);
-const body = all.map((p) => p.d);
+// --- Génération ---------------------------------------------------------
 
-const out = `// Généré depuis Natural Earth 10m (land + minor islands).
+console.log('Côtes…');
+// Tolérance fine : la carte se laisse maintenant zoomer jusqu'au navire.
+const land = polygons('ne_10m_land.json', { eps: 0.12, minArea: 0.4 });
+const minor = polygons('ne_10m_minor_islands.json', { eps: 0.1, minArea: 0.06 });
+const coast = [...land, ...minor].sort((a, b) => b.area - a.area).map((p) => p.d);
+
+console.log('Bathymétrie…');
+// Chaque niveau est une nappe « plus profond que X mètres ». Empilées de la
+// plus large à la plus étroite, elles creusent la mer sans une seule image.
+const BATHY_LEVELS = [
+  [200, 'ne_10m_bathymetry_K_200.json'],
+  [1000, 'ne_10m_bathymetry_J_1000.json'],
+  [2000, 'ne_10m_bathymetry_I_2000.json'],
+  [3000, 'ne_10m_bathymetry_H_3000.json'],
+  [4000, 'ne_10m_bathymetry_G_4000.json'],
+];
+const bathymetry = BATHY_LEVELS.map(([depth, file]) => ({
+  depth,
+  paths: polygons(file, { eps: 0.5, minArea: 3 }).map((p) => p.d),
+})).filter((b) => b.paths.length);
+
+console.log('Fleuves et lacs…');
+// Le rang d'échelle écarte les ruisseaux : on garde les fleuves qui structurent
+// réellement le relief, pas le réseau hydrographique complet.
+const rivers = polylines('ne_10m_rivers_lake_centerlines.json', {
+  eps: 0.25,
+  minLength: 6,
+  keep: (p) => (p.scalerank ?? 99) <= 7,
+});
+const lakes = polygons('ne_10m_lakes.json', { eps: 0.2, minArea: 0.4 }).map((p) => p.d);
+
+const list = (arr, indent = '  ') =>
+  `[\n${indent}${arr.map((d) => JSON.stringify(d)).join(`,\n${indent}`)},\n${indent.slice(2)}]`;
+
+const out = `// Généré depuis Natural Earth 10 m — ne pas éditer à la main.
+// Voir scripts/build-map.mjs.
+//
 // Projection Mercator, fenêtre ${LNG_MIN}..${LNG_MAX}°E / ${LAT_MIN}..${LAT_MAX}°N.
-// Ne pas éditer à la main — voir scripts/build-map.mjs.
 
 export const MAP_VIEW = {
   lngMin: ${LNG_MIN},
@@ -171,8 +269,23 @@ export function project(lng, lat) {
   };
 }
 
-export const LAND_PATHS = ${JSON.stringify(body, null, 0).replace(/","/g, '",\n  "').replace(/^\[/, '[\n  ').replace(/\]$/, ',\n]')};
+export const LAND_PATHS = ${list(coast)};
+
+/** Nappes « plus profond que N mètres », de la plus large à la plus étroite. */
+export const BATHYMETRY = [
+${bathymetry.map((b) => `  { depth: ${b.depth}, paths: ${list(b.paths, '    ')} },`).join('\n')}
+];
+
+export const RIVER_PATHS = ${list(rivers)};
+
+export const LAKE_PATHS = ${list(lakes)};
 `;
 
-fs.writeFileSync(process.argv[3] ?? 'mediterranean.js', out);
-console.log('rings:', all.length, 'size:', (out.length / 1024).toFixed(0) + 'KB', 'viewBox h:', VIEW_H.toFixed(1));
+const dest = process.argv[2] ?? 'mediterranean.js';
+fs.writeFileSync(dest, out);
+
+console.log(`\ncôtes        ${coast.length} anneaux`);
+for (const b of bathymetry) console.log(`  -${String(b.depth).padStart(4)} m    ${b.paths.length} nappes`);
+console.log(`fleuves      ${rivers.length} tronçons`);
+console.log(`lacs         ${lakes.length} anneaux`);
+console.log(`→ ${dest}  ${(out.length / 1024).toFixed(0)} Ko`);

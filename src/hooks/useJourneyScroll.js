@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import Lenis from '@studio-freight/lenis';
+import { clamp } from '../lib/camera';
 import { journeyState, useOdysseusStore } from '../store/useOdysseusStore';
-import { resolveScroll, nearestAnchorVh } from '../lib/scroll';
+import { resolveScroll, nearestAnchorVh, buildLayout } from '../lib/scroll';
 
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' &&
@@ -13,8 +14,9 @@ const IDLE_SPEED = 0.35; // px/frame
 const SNAP_TOLERANCE_PX = 8;
 
 export function useJourneyScroll() {
-  const stepCount = useOdysseusStore((s) => s.steps.length);
+  const steps = useOdysseusStore((s) => s.steps);
   const setNarrative = useOdysseusStore((s) => s.setNarrative);
+  const layout = useMemo(() => buildLayout(steps), [steps]);
   const lenisRef = useRef(null);
   // Empêche l'aimantation de contrarier un déplacement déclenché par un bouton.
   const suspendRef = useRef(0);
@@ -38,7 +40,7 @@ export function useJourneyScroll() {
     let idleSince = 0;
 
     const apply = (scrollY) => {
-      const state = resolveScroll(scrollY, window.innerHeight, stepCount);
+      const state = resolveScroll(scrollY, window.innerHeight, layout);
       journeyState.progress = state.progress;
       journeyState.phase = state.phase;
       journeyState.heroFade = state.heroFade;
@@ -60,7 +62,7 @@ export function useJourneyScroll() {
       // On borne à ce qui est réellement atteignable, sinon l'aimantation
       // vise une position hors document et se relance indéfiniment.
       const maxScroll = document.documentElement.scrollHeight - vh;
-      const target = Math.min(nearestAnchorVh(scrollY / vh, stepCount) * vh, maxScroll);
+      const target = Math.min(nearestAnchorVh(scrollY / vh, layout) * vh, maxScroll);
       if (Math.abs(target - scrollY) < SNAP_TOLERANCE_PX) return;
 
       suspendRef.current = now + 1900;
@@ -95,14 +97,22 @@ export function useJourneyScroll() {
       lenis?.destroy();
       lenisRef.current = null;
     };
-  }, [stepCount, setNarrative]);
+  }, [layout, setNarrative]);
 
-  return { lenisRef, suspendRef };
+  return { lenisRef, suspendRef, layout };
 }
 
-/** Défilement programmatique (bouton « commencer », timeline, flèches). */
-export function scrollToVh(nav, vhOffset, duration = 3) {
+/**
+ * Défilement programmatique (bouton « commencer », timeline, flèches).
+ * Sans durée imposée, elle se déduit de la distance à parcourir : une escale
+ * voisine s'atteint en trois secondes, la remontée vers Corcyre en dix.
+ */
+export function scrollToVh(nav, vhOffset, duration) {
   const target = vhOffset * window.innerHeight;
+  if (duration == null) {
+    const from = (nav?.lenisRef?.current?.scroll ?? window.scrollY) / window.innerHeight;
+    duration = clamp(3.18 * Math.abs(vhOffset - from) - 0.34, 2.2, 11);
+  }
   const lenis = nav?.lenisRef?.current;
   if (nav?.suspendRef) nav.suspendRef.current = performance.now() + duration * 1000 + 250;
   if (lenis) lenis.scrollTo(target, { duration, easing: (t) => 1 - Math.pow(1 - t, 4) });

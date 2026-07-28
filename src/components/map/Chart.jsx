@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { MAP_VIEW, project } from '../../data/mediterranean';
-import { getLandRings } from '../../lib/landGeometry';
+import { getMapGeometry } from '../../lib/landGeometry';
 import { buildRoute, pointAtLength, kmToMapUnits } from '../../lib/route';
 import { baseScale, clamp, damp, lerp } from '../../lib/camera';
 import { createWeather, blendWeather } from '../../lib/weather';
@@ -22,7 +22,7 @@ const mixRgb = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
 const rgbCss = ([r, g, b]) => `rgb(${r},${g},${b})`;
 
 const ZOOM_STOP = 4.2;
-const ZOOM_SAIL = 1.9;
+const ZOOM_SAIL = 2.7;
 const PARTICLE_COUNT = 70;
 
 export default function Chart({ onStopClick }) {
@@ -60,7 +60,7 @@ export default function Chart({ onStopClick }) {
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d', { alpha: false });
-    const rings = getLandRings();
+    const geo = getMapGeometry();
     const routePath = new Path2D(route.d);
 
     const cam = { x: basin.x, y: basin.y, z: 1 };
@@ -227,6 +227,24 @@ export default function Chart({ onStopClick }) {
       ctx.setTransform(dpr * s, 0, 0, dpr * s, dpr * originX, dpr * originY);
       const px = 1 / s; // un pixel écran, exprimé en unités carte
 
+      // --- Bathymétrie ---------------------------------------------------
+      // Chaque nappe couvre ce qui est plus profond qu'un palier donné. En les
+      // empilant, la mer se creuse : le plateau continental reste clair, les
+      // fosses ioniennes s'enfoncent dans le noir. Le liseré qui les borde est
+      // la courbe de niveau, comme sur une carte marine.
+      for (const level of geo.bathymetry) {
+        const shapes = level.shapes.filter(
+          (r) =>
+            r.maxX > view.minX && r.minX < view.maxX && r.maxY > view.minY && r.minY < view.maxY
+        );
+        if (!shapes.length) continue;
+        ctx.fillStyle = 'rgba(3, 9, 17, 0.11)';
+        for (const r of shapes) ctx.fill(r.path);
+        ctx.strokeStyle = 'rgba(140, 190, 220, 0.05)';
+        ctx.lineWidth = px;
+        for (const r of shapes) ctx.stroke(r.path);
+      }
+
       // --- Graticule ----------------------------------------------------
       ctx.lineWidth = px;
       ctx.strokeStyle = 'rgba(201, 162, 39, 0.11)';
@@ -265,7 +283,7 @@ export default function Chart({ onStopClick }) {
 
       // --- Terres -------------------------------------------------------
       const minSize = 1.5 * px; // on ignore ce qui ferait moins de ~1,5 px
-      const visible = rings.filter(
+      const visible = geo.coast.filter(
         (r) =>
           r.size > minSize &&
           r.maxX > view.minX &&
@@ -308,6 +326,32 @@ export default function Chart({ onStopClick }) {
       ctx.strokeStyle = 'rgba(224, 190, 96, 0.62)';
       ctx.lineWidth = 1.05 * px;
       for (const r of visible) ctx.stroke(r.path);
+
+      // --- Lacs et fleuves ------------------------------------------------
+      // Ils n'apparaissent qu'une fois la carte approchée : en vue d'ensemble
+      // ils ne seraient qu'un fourmillement de traits.
+      const hydroFade = clamp((cam.z - 1.6) / 1.5, 0, 1);
+      if (hydroFade > 0.01) {
+        const lakes = geo.lakes.filter(
+          (r) =>
+            r.size > minSize &&
+            r.maxX > view.minX && r.minX < view.maxX && r.maxY > view.minY && r.minY < view.maxY
+        );
+        ctx.fillStyle = `rgba(12, 30, 46, ${0.9 * hydroFade})`;
+        for (const r of lakes) ctx.fill(r.path);
+        ctx.strokeStyle = `rgba(201, 162, 39, ${0.3 * hydroFade})`;
+        ctx.lineWidth = px;
+        for (const r of lakes) ctx.stroke(r.path);
+
+        ctx.strokeStyle = `rgba(190, 205, 215, ${0.22 * hydroFade})`;
+        ctx.lineWidth = 0.9 * px;
+        ctx.lineCap = 'round';
+        for (const r of geo.rivers) {
+          if (r.maxX < view.minX || r.minX > view.maxX) continue;
+          if (r.maxY < view.minY || r.minY > view.maxY) continue;
+          ctx.stroke(r.path);
+        }
+      }
 
       // --- Zones d'incertitude (mode historiens) -------------------------
       const wantUncertainty = mapModeRef.current === 'historians' ? 1 : 0;
