@@ -29,6 +29,8 @@ import { asset } from '../lib/asset.js';
 export const SOUNDTRACK = {
   _overture: asset('audio/ulysse.mp3'),
   troy: asset('audio/siege-de-troie.mp3'),
+  laestrygonians: asset('audio/lestrygons.mp3'),
+  circe: asset('audio/circe.mp3'),
   underworld: asset('audio/enfer-d-hades.mp3'),
   sirens: asset('audio/chant-des-sirenes.mp3'),
   ithaca: asset('audio/ithaque.mp3'),
