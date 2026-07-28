@@ -193,6 +193,9 @@ export default function Chart({ onStopClick }) {
 
       const toScreen = (p) => ({ x: p.x * s + originX, y: p.y * s + originY });
 
+      const pointerPx = ((pointer.x + 1) / 2) * width;
+      const pointerPy = ((pointer.y + 1) / 2) * height;
+
       // Fenêtre visible en unités carte (pour le culling).
       const view = {
         minX: (-originX) / s,
@@ -365,70 +368,102 @@ export default function Chart({ onStopClick }) {
       }
 
       // --- Les lieux du récit ---------------------------------------------
-      // Ils peuplent le monde autour de la route sans jamais lui disputer le
-      // regard : plus ternes, plus fins, et seulement une fois la carte
-      // approchée — en vue d'ensemble ils ne seraient qu'un semis de noms.
+      // Des citadelles dessinées plutôt que des noms écrits : une typographie
+      // moderne posée sur une carte gravée trahit tout de suite l'illusion,
+      // là où un petit rempart la sert. Le nom ne vient qu'au survol.
       const placeFade = clamp((cam.z - 2.1) / 1.4, 0, 1) * (1 - epilogueFade);
       if (placeFade > 0.01 && width >= 900) {
         ctx.save();
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
+        ctx.lineJoin = 'miter';
 
-        // Deux lieux voisins écrivent l'un sur l'autre — Salamine et Athènes
-        // ne sont qu'à vingt-cinq kilomètres. On place donc les royaumes
-        // d'abord, et l'on renonce à tout nom qui recouvrirait un précédent.
         const placed = [];
+        let hovered = null;
+        let hoveredDist = 34;
 
         for (const place of places) {
           const q = toScreen(place.at);
-          if (q.x < -80 || q.x > width + 80 || q.y < -40 || q.y > height + 40) continue;
+          if (q.x < -60 || q.x > width + 60 || q.y < -40 || q.y > height + 40) continue;
 
           // On s'efface près d'une escale : c'est elle que l'on vient lire.
           let crowded = false;
           for (const sp of stopPoints) {
             const s2 = toScreen(sp);
-            if (Math.hypot(s2.x - q.x, s2.y - q.y) < 52) { crowded = true; break; }
+            if (Math.hypot(s2.x - q.x, s2.y - q.y) < 46) { crowded = true; break; }
           }
           if (crowded) continue;
 
           const royal = place.kind === 'royaume';
-          const label = place.name.toUpperCase();
-          ctx.font = `500 ${royal ? 9.5 : 8.5}px Inter, system-ui, sans-serif`;
-          if ('letterSpacing' in ctx) ctx.letterSpacing = '0.16em';
-          const half = ctx.measureText(label).width / 2 + 5;
-          const box = { x0: q.x - half, x1: q.x + half, y0: q.y - 5, y1: q.y + 18 };
+          const w = royal ? 23 : 10;
+          const box = { x0: q.x - w / 2, x1: q.x + w / 2, y0: q.y - 16, y1: q.y + 3 };
           if (placed.some((b) => box.x0 < b.x1 && box.x1 > b.x0 && box.y0 < b.y1 && box.y1 > b.y0)) {
-            if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
             continue;
           }
           placed.push(box);
 
-          const a = placeFade * (royal ? 0.62 : 0.42);
-
-          ctx.strokeStyle = `rgba(216, 200, 165, ${a})`;
-          ctx.fillStyle = `rgba(216, 200, 165, ${a})`;
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          if (royal) {
-            // Le cercle pointé des cartes anciennes : une ville, un palais.
-            ctx.arc(q.x, q.y, 3.2, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.arc(q.x, q.y, 1.1, 0, Math.PI * 2);
-            ctx.fill();
-          } else {
-            ctx.save();
-            ctx.translate(q.x, q.y);
-            ctx.rotate(Math.PI / 4);
-            ctx.strokeRect(-2.1, -2.1, 4.2, 4.2);
-            ctx.restore();
+          const d = Math.hypot(q.x - pointerPx, q.y - pointerPy);
+          if (d < hoveredDist) {
+            hoveredDist = d;
+            hovered = { place, q };
           }
 
-          ctx.fillStyle = `rgba(216, 200, 165, ${a * 0.95})`;
-          ctx.fillText(label, q.x, q.y + 7);
-          if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+          const a = placeFade * (royal ? 0.85 : 0.6);
+          ctx.strokeStyle = `rgba(216, 200, 165, ${a})`;
+          ctx.fillStyle = `rgba(216, 200, 165, ${a * 0.42})`;
+          ctx.lineWidth = 1;
+
+          if (royal) {
+            // Une citadelle : trois tours de hauteurs inégales sur un rempart.
+            // C'est le signe des villes sur les cartes anciennes, et il se
+            // reconnaît encore à quinze pixels.
+            const x = Math.round(q.x) + 0.5;
+            const y = Math.round(q.y) + 0.5;
+            const towers = [
+              [-10, 8],
+              [-3.5, 14],
+              [4.5, 10],
+            ];
+            for (const [dx, h] of towers) {
+              const tw = dx === -3.5 ? 7 : 5.5;
+              ctx.beginPath();
+              ctx.rect(x + dx, y - h, tw, h);
+              ctx.fill();
+              ctx.stroke();
+            }
+            ctx.beginPath();
+            ctx.moveTo(x - 11.5, y);
+            ctx.lineTo(x + 11.5, y);
+            ctx.stroke();
+          } else {
+            // Un repère : simple cairn, sans architecture — un cap ou une
+            // contrée n'est pas une ville.
+            const x = Math.round(q.x) + 0.5;
+            const y = Math.round(q.y) + 0.5;
+            ctx.beginPath();
+            ctx.moveTo(x, y - 7);
+            ctx.lineTo(x + 4.5, y);
+            ctx.lineTo(x - 4.5, y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+          }
         }
+
+        // Le nom, seulement sous le curseur.
+        if (hovered) {
+          const { place, q } = hovered;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          ctx.font = '500 9.5px Inter, system-ui, sans-serif';
+          if ('letterSpacing' in ctx) ctx.letterSpacing = '0.18em';
+          ctx.fillStyle = `rgba(246, 243, 236, ${placeFade})`;
+          ctx.fillText(place.name.toUpperCase(), q.x, q.y + 7);
+          if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+          ctx.font = 'italic 10px Georgia, serif';
+          ctx.fillStyle = `rgba(216, 200, 165, ${placeFade * 0.7})`;
+          ctx.fillText(place.note, q.x, q.y + 20);
+        }
+
         ctx.restore();
         ctx.setTransform(dpr * s, 0, 0, dpr * s, dpr * originX, dpr * originY);
       }
@@ -698,8 +733,6 @@ export default function Chart({ onStopClick }) {
       // faisait que charger l'image. Les étiquettes ne se révèlent donc plus
       // qu'au survol de leur point. Muettes pendant l'intro et l'épilogue, et
       // sur petit écran où la colonne de texte recouvre toute la carte.
-      const pointerPx = ((pointer.x + 1) / 2) * width;
-      const pointerPy = ((pointer.y + 1) / 2) * height;
       const labelAlpha =
         journeyState.phase === 'hero' || width < 900
           ? 0

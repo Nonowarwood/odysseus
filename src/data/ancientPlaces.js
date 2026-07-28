@@ -9,8 +9,14 @@
  * autres royaumes achéens, c'est comprendre sans un mot que tous les autres
  * rois, eux, sont rentrés chez eux.
  *
- *   kind 'royaume' — un palais, un roi nommé dans l'Iliade ou l'Odyssée
- *   kind 'repere'  — un point de passage ou une borne du monde connu
+ * Ils sont dessinés, jamais écrits : une typographie moderne posée sur une
+ * carte gravée trahit l'illusion, là où un petit rempart la sert. Le nom
+ * n'apparaît qu'au survol.
+ *
+ *   kind 'royaume' — un palais, un roi nommé dans l'Iliade ou l'Odyssée.
+ *                    Dessiné en citadelle : trois tours sur un rempart.
+ *   kind 'repere'  — un cap, une contrée, une borne du monde connu.
+ *                    Dessiné en cairn : ce n'est pas une ville.
  */
 export const ancientPlaces = [
   // --- Les royaumes achéens ---
