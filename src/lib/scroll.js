@@ -109,16 +109,24 @@ export function resolveScroll(scrollY, viewportH, layout) {
 
     const block = layout.blocks[index];
     const local = y - block.startVh;
-    const legT =
-      block.travelVh > 0
-        ? easeInOut(clamp((local - block.dwellVh) / block.travelVh, 0, 1))
-        : 0;
+    const travelling = block.travelVh > 0;
+    // Avancement linéaire dans la traversée, avant tout lissage : c'est lui
+    // qui décide de l'état, parce qu'il est lisible sans ambiguïté aux bornes.
+    const raw = travelling ? clamp((local - block.dwellVh) / block.travelVh, 0, 1) : 0;
+    const legT = easeInOut(raw);
+
+    // Arrivé au bout de la traversée, on est à l'escale SUIVANTE, même si le
+    // scroll n'a pas tout à fait atteint la frontière du bloc. Sans cela, le
+    // navire touchait déjà l'escale pendant que le texte affichait encore la
+    // précédente : le navigateur arrondit la position de défilement, et il
+    // manquait toujours une fraction de pixel pour basculer de bloc.
+    const arrived = travelling && raw >= 0.985;
 
     return {
       phase: 'journey',
       progress: index + legT,
-      index,
-      sailing: block.travelVh > 0 && legT > 0.04 && legT < 0.96,
+      index: arrived ? Math.min(index + 1, last) : index,
+      sailing: travelling && raw > 0.02 && raw < 0.985,
       heroFade: 1,
       epilogueFade: 0,
       legT,

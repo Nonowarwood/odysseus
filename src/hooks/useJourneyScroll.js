@@ -62,7 +62,7 @@ export function useJourneyScroll() {
       // On borne à ce qui est réellement atteignable, sinon l'aimantation
       // vise une position hors document et se relance indéfiniment.
       const maxScroll = document.documentElement.scrollHeight - vh;
-      const target = Math.min(nearestAnchorVh(scrollY / vh, layout) * vh, maxScroll);
+      const target = Math.round(Math.min(nearestAnchorVh(scrollY / vh, layout) * vh, maxScroll));
       if (Math.abs(target - scrollY) < SNAP_TOLERANCE_PX) return;
 
       suspendRef.current = now + 1900;
@@ -108,7 +108,7 @@ export function useJourneyScroll() {
  * voisine s'atteint en trois secondes, la remontée vers Corcyre en dix.
  */
 export function scrollToVh(nav, vhOffset, duration) {
-  const target = vhOffset * window.innerHeight;
+  const target = Math.round(vhOffset * window.innerHeight);
   if (duration == null) {
     const from = (nav?.lenisRef?.current?.scroll ?? window.scrollY) / window.innerHeight;
     duration = clamp(3.18 * Math.abs(vhOffset - from) - 0.34, 2.2, 11);
