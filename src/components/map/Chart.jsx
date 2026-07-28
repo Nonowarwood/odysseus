@@ -5,6 +5,7 @@ import { buildRoute, pointAtLength, kmToMapUnits } from '../../lib/route.js';
 import { baseScale, clamp, damp, lerp } from '../../lib/camera.js';
 import { createWeather, blendWeather } from '../../lib/weather.js';
 import { journeyState, useOdysseusStore } from '../../store/useOdysseusStore.js';
+import { ancientPlaces } from '../../data/ancientPlaces.js';
 
 const INK = '#060d16';
 const SEA_DEEP = '#0c1b2a';
@@ -39,6 +40,16 @@ export default function Chart({ onStopClick }) {
   const stopPoints = useMemo(
     () => steps.map((s) => project(s.coordinates.lng, s.coordinates.lat)),
     [steps]
+  );
+
+  // Les royaumes priment sur les repères : en cas de chevauchement, c'est le
+  // palais d'un roi que l'on garde, pas un cap.
+  const places = useMemo(
+    () =>
+      ancientPlaces
+        .map((p) => ({ ...p, at: project(p.lng, p.lat) }))
+        .sort((a, b) => (a.kind === b.kind ? 0 : a.kind === 'royaume' ? -1 : 1)),
+    []
   );
 
   // Cadrage d'ensemble : toute la route, avec de la marge.
@@ -351,6 +362,75 @@ export default function Chart({ onStopClick }) {
           if (r.maxY < view.minY || r.minY > view.maxY) continue;
           ctx.stroke(r.path);
         }
+      }
+
+      // --- Les lieux du récit ---------------------------------------------
+      // Ils peuplent le monde autour de la route sans jamais lui disputer le
+      // regard : plus ternes, plus fins, et seulement une fois la carte
+      // approchée — en vue d'ensemble ils ne seraient qu'un semis de noms.
+      const placeFade = clamp((cam.z - 2.1) / 1.4, 0, 1) * (1 - epilogueFade);
+      if (placeFade > 0.01 && width >= 900) {
+        ctx.save();
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+
+        // Deux lieux voisins écrivent l'un sur l'autre — Salamine et Athènes
+        // ne sont qu'à vingt-cinq kilomètres. On place donc les royaumes
+        // d'abord, et l'on renonce à tout nom qui recouvrirait un précédent.
+        const placed = [];
+
+        for (const place of places) {
+          const q = toScreen(place.at);
+          if (q.x < -80 || q.x > width + 80 || q.y < -40 || q.y > height + 40) continue;
+
+          // On s'efface près d'une escale : c'est elle que l'on vient lire.
+          let crowded = false;
+          for (const sp of stopPoints) {
+            const s2 = toScreen(sp);
+            if (Math.hypot(s2.x - q.x, s2.y - q.y) < 52) { crowded = true; break; }
+          }
+          if (crowded) continue;
+
+          const royal = place.kind === 'royaume';
+          const label = place.name.toUpperCase();
+          ctx.font = `500 ${royal ? 9.5 : 8.5}px Inter, system-ui, sans-serif`;
+          if ('letterSpacing' in ctx) ctx.letterSpacing = '0.16em';
+          const half = ctx.measureText(label).width / 2 + 5;
+          const box = { x0: q.x - half, x1: q.x + half, y0: q.y - 5, y1: q.y + 18 };
+          if (placed.some((b) => box.x0 < b.x1 && box.x1 > b.x0 && box.y0 < b.y1 && box.y1 > b.y0)) {
+            if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+            continue;
+          }
+          placed.push(box);
+
+          const a = placeFade * (royal ? 0.62 : 0.42);
+
+          ctx.strokeStyle = `rgba(216, 200, 165, ${a})`;
+          ctx.fillStyle = `rgba(216, 200, 165, ${a})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          if (royal) {
+            // Le cercle pointé des cartes anciennes : une ville, un palais.
+            ctx.arc(q.x, q.y, 3.2, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(q.x, q.y, 1.1, 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            ctx.save();
+            ctx.translate(q.x, q.y);
+            ctx.rotate(Math.PI / 4);
+            ctx.strokeRect(-2.1, -2.1, 4.2, 4.2);
+            ctx.restore();
+          }
+
+          ctx.fillStyle = `rgba(216, 200, 165, ${a * 0.95})`;
+          ctx.fillText(label, q.x, q.y + 7);
+          if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+        }
+        ctx.restore();
+        ctx.setTransform(dpr * s, 0, 0, dpr * s, dpr * originX, dpr * originY);
       }
 
       // --- Zones d'incertitude (mode historiens) -------------------------
