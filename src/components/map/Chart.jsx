@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { MAP_VIEW, project } from '../../data/mediterranean';
-import { getMapGeometry } from '../../lib/landGeometry';
-import { buildRoute, pointAtLength, kmToMapUnits } from '../../lib/route';
-import { baseScale, clamp, damp, lerp } from '../../lib/camera';
-import { createWeather, blendWeather } from '../../lib/weather';
-import { journeyState, useOdysseusStore } from '../../store/useOdysseusStore';
+import { MAP_VIEW, project } from '../../data/mediterranean.js';
+import { getMapGeometry } from '../../lib/landGeometry.js';
+import { buildRoute, pointAtLength, kmToMapUnits } from '../../lib/route.js';
+import { baseScale, clamp, damp, lerp } from '../../lib/camera.js';
+import { createWeather, blendWeather } from '../../lib/weather.js';
+import { journeyState, useOdysseusStore } from '../../store/useOdysseusStore.js';
 
 const INK = '#060d16';
 const SEA_DEEP = '#0c1b2a';
@@ -510,6 +510,49 @@ export default function Chart({ onStopClick }) {
         ctx.quadraticCurveTo(7, -8.5, 5.5, -1);
         ctx.closePath();
         ctx.fill();
+        ctx.restore();
+      }
+
+      // --- Bord des données ----------------------------------------------
+      // Sur un très grand écran, la vue d'ensemble peut atteindre la limite de
+      // la carte. Plutôt que de laisser voir une arête nette, on éteint la
+      // carte dans l'encre : au-delà, plein noir ; en deçà, un fondu.
+      const edgeX0 = originX;
+      const edgeY0 = originY;
+      const edgeX1 = MAP_VIEW.width * s + originX;
+      const edgeY1 = MAP_VIEW.height * s + originY;
+      const band = Math.min(260, Math.max(width, height) * 0.2);
+
+      if (edgeX0 > -band || edgeY0 > -band || edgeX1 < width + band || edgeY1 < height + band) {
+        ctx.save();
+        ctx.fillStyle = INK;
+        if (edgeX0 > 0) ctx.fillRect(0, 0, edgeX0, height);
+        if (edgeX1 < width) ctx.fillRect(edgeX1, 0, width - edgeX1, height);
+        if (edgeY0 > 0) ctx.fillRect(0, 0, width, edgeY0);
+        if (edgeY1 < height) ctx.fillRect(0, edgeY1, width, height - edgeY1);
+
+        const fade = (x0, y0, x1, y1) => {
+          const g = ctx.createLinearGradient(x0, y0, x1, y1);
+          g.addColorStop(0, INK);
+          g.addColorStop(1, 'rgba(6, 13, 22, 0)');
+          return g;
+        };
+        if (edgeX0 > -band) {
+          ctx.fillStyle = fade(edgeX0, 0, edgeX0 + band, 0);
+          ctx.fillRect(edgeX0, 0, band, height);
+        }
+        if (edgeX1 < width + band) {
+          ctx.fillStyle = fade(edgeX1, 0, edgeX1 - band, 0);
+          ctx.fillRect(edgeX1 - band, 0, band, height);
+        }
+        if (edgeY0 > -band) {
+          ctx.fillStyle = fade(0, edgeY0, 0, edgeY0 + band);
+          ctx.fillRect(0, edgeY0, width, band);
+        }
+        if (edgeY1 < height + band) {
+          ctx.fillStyle = fade(0, edgeY1, 0, edgeY1 - band);
+          ctx.fillRect(0, edgeY1 - band, width, band);
+        }
         ctx.restore();
       }
 

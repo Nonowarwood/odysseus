@@ -55,7 +55,13 @@ export const journeySteps = [
     mood: '#3a2620',
     weather: { embers: 0.7, wind: 0.35, mist: 0.1 },
     coordinates: { lat: 40.87, lng: 25.52 }, // Ismaros, côte de Thrace
-    via: [{ lat: 40.5, lng: 26.0 }],
+    via: [
+      { lat: 39.78, lng: 25.78 },
+      { lat: 39.68, lng: 25.35 },
+      { lat: 39.7, lng: 24.65 },
+      { lat: 40.4, lng: 24.75 },
+      { lat: 40.75, lng: 25.35 },
+    ],
     year: 0.02,
     timeLabel: 'Année 0 · premiers jours',
     duration: 'Quelques jours',
@@ -82,12 +88,22 @@ export const journeySteps = [
     weather: { motes: 0.85, mist: 0.4 },
     coordinates: { lat: 33.81, lng: 10.86 }, // Djerba, Tunisie
     via: [
-      { lat: 39.3, lng: 24.8 },
-      { lat: 36.4, lng: 23.3 }, // cap Malée, où la tempête les emporte
-      { lat: 35.6, lng: 22.4 },
+      { lat: 40.2, lng: 25.1 },
+      { lat: 38.9, lng: 24.9 },
+      { lat: 38.3, lng: 24.8 },
+      { lat: 38.0, lng: 24.7 },
+      { lat: 37.85, lng: 24.5 }, // le détroit de Kafireas, entre l'Eubée et Andros
+      { lat: 37.6, lng: 24.2 },
+      { lat: 36.95, lng: 24.1 },
+      { lat: 36.45, lng: 23.5 },
+      { lat: 36.25, lng: 23.15 }, // cap Malée, où la tempête les emporte
+      { lat: 36.0, lng: 23.25 },
+      { lat: 35.6, lng: 22.9 },
+      { lat: 35.2, lng: 21.9 },
       { lat: 34.2, lng: 19.0 },
       { lat: 33.6, lng: 14.0 },
-      { lat: 33.7, lng: 11.6 },
+      { lat: 34.05, lng: 11.4 },
+      { lat: 33.95, lng: 10.95 },
     ],
     year: 0.06,
     timeLabel: 'Année 0 · + quelques jours',
@@ -150,8 +166,15 @@ export const journeySteps = [
     weather: { wind: 0.95, rain: 0.15 },
     coordinates: { lat: 38.4824, lng: 14.9629 }, // Lipari, îles Éoliennes
     via: [
-      { lat: 37.9, lng: 15.4 },
-      { lat: 38.2, lng: 15.6 },
+      { lat: 37.62, lng: 15.26 },
+      { lat: 37.85, lng: 15.42 },
+      { lat: 38.05, lng: 15.55 },
+      { lat: 38.11, lng: 15.57 },
+      { lat: 38.19, lng: 15.603 },
+      { lat: 38.25, lng: 15.64 }, // le goulet de Messine : 5,7 km de large
+      { lat: 38.29, lng: 15.7 },
+      { lat: 38.36, lng: 15.62 },
+      { lat: 38.47, lng: 15.3 },
     ],
     year: 0.28,
     timeLabel: 'Année 0 · + 3 mois',
@@ -182,6 +205,7 @@ export const journeySteps = [
     plateCaption: "Antiphatès, roi des Lestrygons, massacre un grand nombre des compagnons d'Ulysse",
     coordinates: { lat: 41.386, lng: 9.16 }, // Bonifacio, Corse
     via: [
+      { lat: 38.62, lng: 14.62 },
       { lat: 39.6, lng: 13.6 },
       { lat: 40.6, lng: 11.6 },
       { lat: 41.2, lng: 10.2 },
@@ -371,12 +395,15 @@ export const journeySteps = [
     plateCaption: "Mercure, envoyé par Jupiter, ordonne à Calypso de renvoyer Ulysse",
     coordinates: { lat: 35.92, lng: -5.75 }, // au bord de l'Océan, au détroit de Gibraltar
     via: [
-      { lat: 37.2, lng: 14.6 },
-      { lat: 36.6, lng: 12.2 },
-      { lat: 37.6, lng: 8.6 },
-      { lat: 37.7, lng: 4.5 },
-      { lat: 36.9, lng: -0.5 },
-      { lat: 36.0, lng: -4.6 },
+      { lat: 37.4, lng: 15.35 },
+      { lat: 36.75, lng: 15.25 },
+      { lat: 36.5, lng: 14.3 },
+      { lat: 37.15, lng: 11.6 },
+      { lat: 37.6, lng: 10.2 },
+      { lat: 37.95, lng: 8.8 },
+      { lat: 38.0, lng: 6.0 },
+      { lat: 36.9, lng: 0.2 },
+      { lat: 36.1, lng: -4.4 },
     ],
     year: 1.85,
     gapLabel: 'sept ans sur place',
@@ -408,9 +435,10 @@ export const journeySteps = [
     weather: { rain: 0.7, wind: 0.85, lightning: 0.2 },
     plate: 'phaeacians',
     plateCaption: "Nausicaa et ses femmes trouvent Ulysse sur le rivage",
-    coordinates: { lat: 39.62, lng: 19.92 }, // Schérie / Corcyre, Corfou
+    coordinates: { lat: 39.675, lng: 19.7 }, // Paleokastritsa, côte ouest de Corcyre
     via: [
-      { lat: 36.0, lng: -4.6 },
+      { lat: 36.02, lng: -5.4 },
+      { lat: 36.1, lng: -4.5 },
       { lat: 36.9, lng: -0.5 },
       { lat: 37.7, lng: 4.5 },
       { lat: 37.8, lng: 8.9 },
@@ -419,7 +447,8 @@ export const journeySteps = [
       { lat: 36.3, lng: 13.6 },
       { lat: 36.5, lng: 15.6 },
       { lat: 37.6, lng: 17.8 },
-      { lat: 38.9, lng: 19.6 },
+      { lat: 39.0, lng: 19.2 },
+      { lat: 39.45, lng: 19.4 },
     ],
     year: 9.0,
     timeLabel: 'Année 9',
@@ -450,8 +479,12 @@ export const journeySteps = [
     plateCaption: "Ulysse endormi est déposé à terre par les Phéaciens, sur le rivage d'Ithaque",
     coordinates: { lat: 38.4419, lng: 20.6614 },
     via: [
-      { lat: 39.2, lng: 20.1 },
-      { lat: 38.8, lng: 20.5 },
+      { lat: 39.35, lng: 19.5 },
+      { lat: 38.7, lng: 20.0 },
+      { lat: 38.1, lng: 20.25 },
+      { lat: 37.95, lng: 20.7 },
+      { lat: 38.18, lng: 20.87 },
+      { lat: 38.36, lng: 20.78 },
     ],
     year: 9.9,
     timeLabel: 'Année 10',

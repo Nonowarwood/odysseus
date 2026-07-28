@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { useOdysseusStore } from '../../store/useOdysseusStore';
-import { legDistanceKm } from '../../lib/route';
+import { useOdysseusStore } from '../../store/useOdysseusStore.js';
+import { legDistanceKm } from '../../lib/route.js';
 
 /**
  * Pendant la traversée, le texte s'efface : il ne reste que la mer, le sillage

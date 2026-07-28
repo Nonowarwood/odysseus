@@ -24,7 +24,7 @@
  * serveur répond 404 sur un fichier pourtant présent. Un nom sans accent ne
  * peut pas tomber dans ce piège, ici comme sur n'importe quel hébergeur.
  */
-import { asset } from '../lib/asset';
+import { asset } from '../lib/asset.js';
 
 export const SOUNDTRACK = {
   _overture: asset('audio/ulysse.mp3'),

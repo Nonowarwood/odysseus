@@ -1,4 +1,4 @@
-import { MAP_VIEW } from '../data/mediterranean';
+import { MAP_VIEW } from '../data/mediterranean.js';
 
 export const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
 export const lerp = (a, b, t) => a + (b - a) * t;
@@ -20,5 +20,6 @@ export const damp = (current, target, lambda, dt) =>
  * le format d'écran, à zoom 1.
  */
 export function baseScale(viewportW, viewportH) {
-  return Math.max(viewportW / MAP_VIEW.width, viewportH / MAP_VIEW.height);
+  const ref = MAP_VIEW.reference ?? MAP_VIEW;
+  return Math.max(viewportW / ref.width, viewportH / ref.height);
 }

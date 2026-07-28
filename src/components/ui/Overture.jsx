@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { useOdysseusStore } from '../../store/useOdysseusStore';
-import Rule from './Rule';
+import { useOdysseusStore } from '../../store/useOdysseusStore.js';
+import Rule from './Rule.jsx';
 
 const rise = {
   hidden: { opacity: 0, y: 18 },

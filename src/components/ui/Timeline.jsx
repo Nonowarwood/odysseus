@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { useOdysseusStore } from '../../store/useOdysseusStore';
+import { useOdysseusStore } from '../../store/useOdysseusStore.js';
 
 /**
  * Rail chronologique : l'espacement des escales est proportionnel au temps

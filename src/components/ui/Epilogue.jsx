@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { useOdysseusStore } from '../../store/useOdysseusStore';
-import { totalJourneyDistanceKm } from '../../lib/route';
-import Rule from './Rule';
+import { useOdysseusStore } from '../../store/useOdysseusStore.js';
+import { totalJourneyDistanceKm } from '../../lib/route.js';
+import Rule from './Rule.jsx';
 
 const reveal = {
   hidden: { opacity: 0, y: 20 },

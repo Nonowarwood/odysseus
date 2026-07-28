@@ -1,4 +1,4 @@
-import { LAND_PATHS, BATHYMETRY, RIVER_PATHS, LAKE_PATHS } from '../data/mediterranean';
+import { LAND_PATHS, BATHYMETRY, RIVER_PATHS, LAKE_PATHS } from '../data/mediterranean.js';
 
 let cache = null;
 

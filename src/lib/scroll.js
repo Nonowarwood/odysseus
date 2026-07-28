@@ -1,5 +1,5 @@
-import { clamp, easeInOut, smoothstep } from './camera';
-import { legDistanceKm } from './route';
+import { clamp, easeInOut, smoothstep } from './camera.js';
+import { legDistanceKm } from './route.js';
 
 // Découpage du document, en multiples de la hauteur d'écran.
 export const HERO_VH = 1;

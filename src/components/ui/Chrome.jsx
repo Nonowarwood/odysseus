@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { useOdysseusStore } from '../../store/useOdysseusStore';
+import { useOdysseusStore } from '../../store/useOdysseusStore.js';
 
 function Segmented({ options, value, onChange }) {
   return (

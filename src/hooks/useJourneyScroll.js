@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef } from 'react';
 import Lenis from '@studio-freight/lenis';
-import { clamp } from '../lib/camera';
-import { journeyState, useOdysseusStore } from '../store/useOdysseusStore';
-import { resolveScroll, nearestAnchorVh, buildLayout } from '../lib/scroll';
+import { clamp } from '../lib/camera.js';
+import { journeyState, useOdysseusStore } from '../store/useOdysseusStore.js';
+import { resolveScroll, nearestAnchorVh, buildLayout } from '../lib/scroll.js';
 
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' &&

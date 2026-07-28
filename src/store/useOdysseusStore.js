@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { journeySteps } from '../data/journeySteps';
+import { journeySteps } from '../data/journeySteps.js';
 
 /**
  * Progression continue du récit, écrite à chaque frame par le scroll et lue

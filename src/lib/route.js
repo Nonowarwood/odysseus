@@ -1,4 +1,4 @@
-import { project, MAP_VIEW } from '../data/mediterranean';
+import { project, MAP_VIEW } from '../data/mediterranean.js';
 
 const SAMPLES_PER_SEGMENT = 28;
 const EARTH_RADIUS_KM = 6371;

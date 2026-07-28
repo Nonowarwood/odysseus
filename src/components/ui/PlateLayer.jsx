@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { useOdysseusStore } from '../../store/useOdysseusStore';
-import { asset } from '../../lib/asset';
+import { useOdysseusStore } from '../../store/useOdysseusStore.js';
+import { asset } from '../../lib/asset.js';
 
 /**
  * La gravure du chapitre, posée dans l'espace laissé libre par la colonne de

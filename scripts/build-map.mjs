@@ -16,16 +16,26 @@
  */
 import fs from 'node:fs';
 
-// --- Fenêtre géographique : Gibraltar → mer Noire, Alpes → Sahara ---
-const LNG_MIN = -8, LNG_MAX = 39, LAT_MIN = 28.5, LAT_MAX = 48.5;
-const VIEW_W = 2000;
+// --- Fenêtre géographique -------------------------------------------------
+// Large débord autour du bassin : sur un grand écran, la vue d'ensemble
+// atteignait le bord des données et l'on voyait la carte s'arrêter net.
+const LNG_MIN = -15, LNG_MAX = 46, LAT_MIN = 21, LAT_MAX = 53;
+
+// Échelle : unités de carte par degré de longitude. Constante, indépendante de
+// la fenêtre — c'est elle qui fixe la signification des niveaux de zoom, et
+// élargir la fenêtre ne doit surtout pas les redéfinir.
+const UNITS_PER_DEGREE = 2000 / 47;
+const VIEW_W = (LNG_MAX - LNG_MIN) * UNITS_PER_DEGREE;
+
+// Cadre de référence du bassin d'origine : la caméra continue de s'y mesurer.
+const REF_W = 2000, REF_H = 1100.26;
 
 // Clip un peu plus large que la fenêtre pour éviter les bords visibles.
 const CLIP = { xMin: LNG_MIN - 1.5, xMax: LNG_MAX + 1.5, yMin: LAT_MIN - 1.5, yMax: LAT_MAX + 1.5 };
 
 // Mercator exprimé en "degrés équivalents" pour partager l'échelle avec la longitude.
 const mercY = (lat) => (180 / Math.PI) * Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360));
-const K = VIEW_W / (LNG_MAX - LNG_MIN);
+const K = UNITS_PER_DEGREE;
 const Y_TOP = mercY(LAT_MAX);
 const VIEW_H = (mercY(LAT_MAX) - mercY(LAT_MIN)) * K;
 
@@ -256,8 +266,11 @@ export const MAP_VIEW = {
   lngMax: ${LNG_MAX},
   latMin: ${LAT_MIN},
   latMax: ${LAT_MAX},
-  width: ${VIEW_W},
+  width: ${Math.round(VIEW_W * 100) / 100},
   height: ${Math.round(VIEW_H * 100) / 100},
+  // Cadre auquel la caméra se mesure : élargir la fenêtre de données ne doit
+  // pas changer ce que signifie un niveau de zoom.
+  reference: { width: ${REF_W}, height: ${REF_H} },
 };
 
 export function project(lng, lat) {

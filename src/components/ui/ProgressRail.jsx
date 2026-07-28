@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { journeyState, useOdysseusStore } from '../../store/useOdysseusStore';
+import { journeyState, useOdysseusStore } from '../../store/useOdysseusStore.js';
 
 /** Filet de progression en haut d'écran, mis à jour hors du cycle React. */
 export default function ProgressRail() {

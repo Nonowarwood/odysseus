@@ -29,6 +29,9 @@ jobs:
 
       - run: npm ci
 
+      - name: La route ne doit toucher aucune terre
+        run: npm run check:route
+
       - name: Build
         # Le site vit dans un sous-chemin : sans ce préfixe, les gravures et
         # les pistes audio renverraient un 404 une fois en ligne.

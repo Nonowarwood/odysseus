@@ -1,20 +1,20 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 
-import Chart from './components/map/Chart';
-import Overture from './components/ui/Overture';
-import Chrome from './components/ui/Chrome';
-import ChapterPanel from './components/ui/ChapterPanel';
-import TransitBanner from './components/ui/TransitBanner';
-import Timeline from './components/ui/Timeline';
-import Epilogue from './components/ui/Epilogue';
-import ProgressRail from './components/ui/ProgressRail';
-import PlateLayer from './components/ui/PlateLayer';
+import Chart from './components/map/Chart.jsx';
+import Overture from './components/ui/Overture.jsx';
+import Chrome from './components/ui/Chrome.jsx';
+import ChapterPanel from './components/ui/ChapterPanel.jsx';
+import TransitBanner from './components/ui/TransitBanner.jsx';
+import Timeline from './components/ui/Timeline.jsx';
+import Epilogue from './components/ui/Epilogue.jsx';
+import ProgressRail from './components/ui/ProgressRail.jsx';
+import PlateLayer from './components/ui/PlateLayer.jsx';
 
-import { useJourneyScroll, scrollToVh } from './hooks/useJourneyScroll';
-import { useOdysseusStore } from './store/useOdysseusStore';
-import { startAmbience, stopAmbience, setScore, setChapterTrack } from './lib/ambience';
-import { trackFor } from './data/soundtrack';
+import { useJourneyScroll, scrollToVh } from './hooks/useJourneyScroll.js';
+import { useOdysseusStore } from './store/useOdysseusStore.js';
+import { startAmbience, stopAmbience, setScore, setChapterTrack } from './lib/ambience.js';
+import { trackFor } from './data/soundtrack.js';
 
 
 // Secondes de lecture accordées à chaque hauteur d'écran en mode cinéma.

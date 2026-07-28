@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { useOdysseusStore } from '../../store/useOdysseusStore';
+import { useOdysseusStore } from '../../store/useOdysseusStore.js';
 
 const LEVELS = [
   { id: 'summary', label: 'Résumé' },

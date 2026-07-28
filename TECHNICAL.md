@@ -68,7 +68,31 @@ liseré tient lieu de courbe de niveau. Aucune image raster n'est nécessaire.
 Fleuves et lacs n'apparaissent qu'au-delà d'un certain zoom : en vue d'ensemble
 ils ne seraient qu'un fourmillement de traits.
 
-Total : 365 ko de JS, servis dans le bundle, sans requête supplémentaire.
+La fenêtre déborde largement le bassin (−15→46 °E, 21→53 °N) : sur un écran
+ultra-large, la vue d'ensemble atteignait sinon la limite des données et l'on
+voyait la carte s'arrêter net. L'échelle est fixée en unités par degré, et la
+caméra se mesure à un cadre de référence constant — élargir la fenêtre ne
+redéfinit donc pas ce que signifie un niveau de zoom. Un fondu vers l'encre
+couvre le bord en dernier recours.
+
+Total : 561 ko de JS, servis dans le bundle, sans requête supplémentaire.
+
+### La route ne touche jamais terre
+
+Une spline de Catmull-Rom passe par ses points d'ancrage mais déborde vers
+l'extérieur des virages : des waypoints tous en mer ne suffisent pas à garantir
+un tracé en mer. `npm run check:route` échantillonne la courbe réellement
+dessinée et teste chaque point contre les polygones de côte.
+
+Le contrôle tourne en intégration continue, avant la construction. Il a
+d'abord relevé 77 points à terre sur 7 traversées — Lemnos, Ténédos, Cythère,
+les Cyclades, la Sicile traversée de part en part. Les corridors serrés ont été
+relevés dans les données plutôt que devinés : le goulet de Messine fait 5,7 km,
+le détroit de Kafireas 4 km par endroits.
+
+Une escale insulaire fait forcément toucher terre à l'accostage : le contrôle
+n'examine donc que ce qui se passe à plus d'une vingtaine de kilomètres d'une
+escale.
 
 La même projection est réexportée sous `project(lng, lat)` : la carte et les
 coordonnées du récit vivent forcément dans le même espace.
