@@ -3,7 +3,7 @@ import { useOdysseusStore } from '../../store/useOdysseusStore';
 
 function Segmented({ options, value, onChange }) {
   return (
-    <div className="flex items-center border border-gold/25 bg-void/40 backdrop-blur-[3px]">
+    <div className="flex items-center border border-gold/25 bg-void/75">
       {options.map((o) => (
         <button
           key={o.value}
@@ -26,7 +26,7 @@ function IconButton({ active, disabled, onClick, label, children }) {
       disabled={disabled}
       aria-label={label}
       title={label}
-      className={`flex h-9 w-9 items-center justify-center border bg-void/40 backdrop-blur-[3px] transition-colors duration-400 disabled:opacity-25 ${
+      className={`flex h-9 w-9 items-center justify-center border bg-void/75 transition-colors duration-400 disabled:opacity-25 ${
         active
           ? 'border-gold bg-gold/15 text-gold'
           : 'border-gold/25 text-papyrus/80 hover:border-gold hover:text-gold'
@@ -121,7 +121,7 @@ export default function Chrome({ onToggleCinema, onRestart, onPrev, onNext }) {
             </svg>
           </IconButton>
 
-          <div className="flex min-w-0 max-w-[15rem] flex-col items-center border border-gold/25 bg-void/50 px-5 py-2 backdrop-blur-[3px] sm:min-w-[13rem] sm:max-w-none">
+          <div className="flex min-w-0 max-w-[15rem] flex-col items-center border border-gold/25 bg-void/80 px-5 py-2 sm:min-w-[13rem] sm:max-w-none">
             <span className="text-[8px] font-medium uppercase tracking-[0.34em] text-papyrus/60">
               {phase === 'epilogue' ? 'Bilan' : `Escale ${index + 1} / ${steps.length}`}
             </span>

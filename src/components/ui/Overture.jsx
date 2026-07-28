@@ -88,7 +88,7 @@ export default function Overture({ onBegin }) {
             animate="show"
             custom={1.6}
             onClick={onBegin}
-            className="group mt-14 inline-flex items-center gap-4 border border-gold/50 bg-gold/[0.06] px-11 py-4 text-[10px] font-medium uppercase tracking-[0.4em] text-gold backdrop-blur-[2px] transition-colors duration-500 hover:bg-gold hover:text-void"
+            className="group mt-14 inline-flex items-center gap-4 border border-gold/50 bg-gold/[0.08] px-11 py-4 text-[10px] font-medium uppercase tracking-[0.4em] text-gold transition-colors duration-500 hover:bg-gold hover:text-void"
           >
             Commencer le voyage
             <span className="transition-transform duration-500 group-hover:translate-x-1">→</span>

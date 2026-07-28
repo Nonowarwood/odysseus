@@ -44,8 +44,7 @@ export default function PlateLayer() {
                 maskPosition: 'center, center',
                 WebkitMaskComposite: 'source-in',
                 maskComposite: 'intersect',
-                opacity: 0.9,
-                filter: 'drop-shadow(0 0 34px rgba(240,207,106,0.3))',
+                opacity: 0.92,
               }}
             />
 

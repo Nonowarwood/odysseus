@@ -96,7 +96,7 @@ export default function Epilogue({ onRestart }) {
             animate="show"
             custom={5}
             onClick={onRestart}
-            className="pointer-events-auto mt-14 border border-gold/50 bg-gold/[0.06] px-9 py-3.5 text-[10px] font-medium uppercase tracking-[0.34em] text-gold backdrop-blur-[2px] transition-colors duration-500 hover:bg-gold hover:text-void"
+            className="pointer-events-auto mt-14 border border-gold/50 bg-gold/[0.08] px-9 py-3.5 text-[10px] font-medium uppercase tracking-[0.34em] text-gold transition-colors duration-500 hover:bg-gold hover:text-void"
           >
             Reprendre depuis Troie
           </motion.button>
